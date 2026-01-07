@@ -1,0 +1,8 @@
+# Core Dependencies
+python-dotenv
+google-generativeai
+FinMind
+pandas
+
+# Crawler Dependencies
+playwright

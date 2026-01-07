@@ -21,6 +21,19 @@ from core.use_cases import ProcessMarketData
 def main():
     print("Starting Threads LLM Trader (Clean Architecture)")
 
+    # Check data availability
+    if not os.path.exists(POSTS_FILE):
+        print(f"Data file {POSTS_FILE} not found.")
+        choice = input("Would you like to fetch new posts from Threads? (y/n): ").strip().lower()
+        if choice == 'y':
+            from crawler.threads_fetch import fetch_following_posts
+            fetch_following_posts()
+    else:
+        choice = input(f"Data found at {POSTS_FILE}. Fetch new posts anyway? (y/n): ").strip().lower()
+        if choice == 'y':
+            from crawler.threads_fetch import fetch_following_posts
+            fetch_following_posts()
+
     # 1. Instantiate Infrastructure (Adapters)
     post_repo = JsonPostRepository(POSTS_FILE)
     signal_repo = JsonSignalRepository(SIGNALS_FILE)

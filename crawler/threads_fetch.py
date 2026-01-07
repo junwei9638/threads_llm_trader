@@ -26,28 +26,51 @@ def fetch_following_posts():
         input()
 
         # Navigate to following feed
+        print("Navigating to following feed...")
         page.goto("https://www.threads.net/following")
-        time.sleep(5) # Wait for initial load
+        
+        # Wait for feed to load explicitly
+        try:
+            print("Waiting for posts to load...")
+            # Threads generic post container often has role="article" or specific classes, 
+            # but 'article' tag is semantic and usually present.
+            # We also wait longer.
+            page.wait_for_selector("div[data-pressable-container='true']", timeout=10000)
+        except Exception as e:
+            print(f"Warning: Timeout waiting for specific post selector: {e}")
 
-        # Scroll a bit to get more posts if needed
-        for _ in range(3):
-            page.mouse.wheel(0, 2000)
+        # Scroll to load more
+        print("Scrolling to load more posts...")
+        for i in range(5):
+            page.mouse.wheel(0, 3000)
             time.sleep(2)
 
-        articles = page.query_selector_all("article")
-        print(f"Found {len(articles)} posts.")
+        # Try multiple selectors
+        articles = page.query_selector_all("div[data-pressable-container='true']") # Common wrapper for posts
+        if not articles:
+             articles = page.query_selector_all("article")
+        
+        print(f"Found {len(articles)} potential post elements.")
 
-        for a in articles:
+        for i, a in enumerate(articles):
             try:
-                # Threads structure might change, this is a basic heuristic
-                # We try to get the text content of the post
-                content = a.inner_text()
+                # Debug first few
+                text_content = a.inner_text().strip()
+                if not text_content:
+                    continue
+                
+                # Simple filter to avoid buttons/menus
+                if len(text_content) < 10:
+                    continue
+
                 posts.append({
-                    "content": content,
+                    "content": text_content,
                     "timestamp": time.time()
                 })
+                if i < 3:
+                    print(f"Sample post {i}: {text_content[:50]}...")
             except Exception as e:
-                print(f"Error parsing post: {e}")
+                print(f"Error parsing post {i}: {e}")
 
         browser.close()
 

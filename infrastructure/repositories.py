@@ -13,9 +13,12 @@ class JsonPostRepository(PostRepository):
     def save_posts(self, posts: List[Post]) -> None:
         data = [
             {
+                "id": p.id,
                 "content": p.content,
                 "timestamp": p.timestamp,
-                "id": p.id
+                "influencer": p.influencer,
+                "post_time": p.post_time,
+                "fetch_time": p.fetch_time
             }
             for p in posts
         ]
@@ -33,7 +36,14 @@ class JsonPostRepository(PostRepository):
                 return []
                 
         return [
-            Post(content=item["content"], timestamp=item.get("timestamp", 0.0), id=item.get("id"))
+            Post(
+                content=item["content"],
+                timestamp=item.get("timestamp", 0.0),
+                id=item.get("id"),
+                influencer=item.get("influencer", "Unknown"),
+                post_time=item.get("post_time", ""),
+                fetch_time=item.get("fetch_time", "")
+            )
             for item in data
         ]
 
@@ -44,12 +54,15 @@ class JsonSignalRepository(SignalRepository):
     def save_signals(self, signals: List[Signal]) -> None:
         data = [
             {
-                "symbol": s.symbol,
-                "action": s.action,
+                "post_id": s.post_id,
+                "influencer": s.influencer,
+                "post_time": s.post_time,
+                "fetch_time": s.fetch_time,
+                "gemini_decision": s.gemini_decision,
                 "confidence": s.confidence,
-                "reason": s.reason,
-                "timestamp": s.timestamp,
-                "original_content": s.original_content
+                "ticker": s.ticker,
+                "entry_price": s.entry_price,
+                "entry_time": s.entry_time
             }
             for s in signals
         ]
@@ -68,12 +81,17 @@ class JsonSignalRepository(SignalRepository):
 
         return [
             Signal(
-                symbol=item["symbol"],
-                action=item["action"],
-                confidence=item["confidence"],
-                reason=item["reason"],
-                timestamp=item.get("timestamp", 0.0),
-                original_content=item.get("original_content", "")
+                post_id=item.get("post_id", ""),
+                influencer=item.get("influencer", ""),
+                post_time=item.get("post_time", ""),
+                fetch_time=item.get("fetch_time", ""),
+                gemini_decision=item.get("gemini_decision", ""),
+                confidence=item.get("confidence", 0.0),
+                ticker=item.get("ticker", ""),
+                entry_price=item.get("entry_price"),
+                entry_time=item.get("entry_time"),
+                reason=item.get("reason", ""),  # Optional backward combatibility if re-analyzing
+                timestamp=0.0 # Not critical for display
             )
             for item in data
         ]

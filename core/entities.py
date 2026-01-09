@@ -7,15 +7,23 @@ class Post:
     content: str
     timestamp: float
     id: Optional[str] = None
+    influencer: str = "Unknown"
+    post_time: str = ""
+    fetch_time: str = ""
 
 @dataclass
 class Signal:
-    symbol: str
-    action: str  # "buy" or "sell"
+    post_id: str
+    influencer: str
+    post_time: str
+    fetch_time: str
+    gemini_decision: str  # "BUY" or "SELL"
     confidence: float
+    ticker: str
     reason: str
-    timestamp: float
-    original_content: str
+    timestamp: float # Internal sort key
+    entry_price: Optional[float] = None
+    entry_time: Optional[str] = None
 
 @dataclass
 class Trade:

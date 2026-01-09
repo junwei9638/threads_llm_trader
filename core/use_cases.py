@@ -37,6 +37,15 @@ class ProcessMarketData:
             print("No signals found.")
             return
 
+        # 2.5 Enrich Signals with Entry Info (Mock Execution for Reporting)
+        # The user wants "entry_price" and "entry_time" in the signals.json
+        print("Enriching signals with market data...")
+        for s in signals:
+            price = self.price_provider.get_current_price(s.ticker)
+            if price:
+                s.entry_price = price
+                s.entry_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
         # 3. Save Signals
         self.signal_repo.save_signals(signals)
         print(f"Saved {len(signals)} signals.")
@@ -46,7 +55,7 @@ class ProcessMarketData:
 
     def _execute_trades(self, signals: List[Signal]):
         # Filter buy signals
-        buy_signals = [s for s in signals if s.action == "buy"]
+        buy_signals = [s for s in signals if s.gemini_decision.upper() == "BUY"]
         if not buy_signals:
             print("No buy signals.")
             return
@@ -55,10 +64,10 @@ class ProcessMarketData:
         # Group by symbol
         grouped = {}
         for s in buy_signals:
-            if s.symbol not in grouped:
-                grouped[s.symbol] = {"count": 0, "conf_sum": 0.0}
-            grouped[s.symbol]["count"] += 1
-            grouped[s.symbol]["conf_sum"] += s.confidence
+            if s.ticker not in grouped:
+                grouped[s.ticker] = {"count": 0, "conf_sum": 0.0}
+            grouped[s.ticker]["count"] += 1
+            grouped[s.ticker]["conf_sum"] += s.confidence
         
         scored = []
         for sym, data in grouped.items():

@@ -25,6 +25,7 @@ class Signal:
     timestamp: float = 0.0 # Internal sort key
     entry_price: Optional[float] = None
     entry_time: Optional[str] = None
+    timing: str = "unknown" # immediate, next_open, unknown
 
 @dataclass
 class Trade:

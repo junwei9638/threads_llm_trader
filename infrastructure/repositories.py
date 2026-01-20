@@ -62,6 +62,9 @@ class JsonSignalRepository(SignalRepository):
                 "gemini_decision": s.gemini_decision,
                 "confidence": s.confidence,
                 "ticker": s.ticker,
+                "reason": s.reason,
+                "weight": s.weight,
+                "timing": s.timing, 
                 "entry_price": s.entry_price,
                 "entry_time": s.entry_time
             }
@@ -103,7 +106,7 @@ class CsvTradeRepository(TradeRepository):
         self.fieldnames = ["timestamp", "author", "symbol", "qty", "price", "total_cost"]
 
     def _ensure_file(self):
-        if not os.path.exists(self.filepath):
+        if not os.path.exists(self.filepath) or os.path.getsize(self.filepath) < 5:
             with open(self.filepath, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=self.fieldnames)
                 writer.writeheader()

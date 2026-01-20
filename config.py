@@ -4,8 +4,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Gemini API Key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
+# Gemini API Keys (Scan for all GEMINI_API_KEY*)
+GEMINI_API_KEYS = [val for key, val in os.environ.items() if key.startswith("GEMINI_API_KEY") and val]
+# Fallback for code expecting single key
+GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else os.getenv("GEMINI_API_KEY", "")
 
 # FinMind Token (optional)
 FINMIND_TOKEN = os.getenv("FINMIND_TOKEN", "")

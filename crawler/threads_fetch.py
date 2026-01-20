@@ -73,10 +73,26 @@ def fetch_following_posts():
                 
                 # Click login button (usually the one with type='submit' or specific text)
                 # Threads login button often in a div with role='button' or simple text
-                page.keyboard.press("Enter")
+                # Try to find the button by text content to be more specific
+                login_button = page.query_selector("div[role='button']:has-text('Log in')") or \
+                               page.query_selector("div[role='button']:has-text('登入')")
                 
-                print("Credentials submitted. Waiting for login...")
-                time.sleep(5)
+                if login_button:
+                    print("Found login button, clicking...")
+                    login_button.click()
+                else:
+                    print("Login button not found, trying 'Enter'...")
+                    page.keyboard.press("Enter")
+                
+                print("Credentials submitted. Waiting for login to complete...")
+                time.sleep(8) # Wait longer for redirect/MFA
+                
+                # Check if we are still on the login page
+                if "login" in page.url:
+                    print("Still on login page. You might need to handle 2FA or captcha manually.")
+                    print("Please log in manually in the browser window.")
+                    print("Press Enter here ONLY after you are successfully logged in...")
+                    input()
                 
                 # Handle potential "Save Info" or 2FA if simple
                 # For now, just wait for redirection

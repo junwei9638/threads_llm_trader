@@ -122,7 +122,7 @@ def fetch_following_posts():
 
         # Scroll to load more
         print("Scrolling to load more posts...")
-        for i in range(5):
+        for i in range(2):
             page.mouse.wheel(0, 3000)
             time.sleep(2)
 

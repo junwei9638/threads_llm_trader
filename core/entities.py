@@ -14,20 +14,22 @@ class Post:
 @dataclass
 class Signal:
     post_id: str
-    influencer: str
+    author: str  # Renamed from influencer to match user request
     post_time: str
     fetch_time: str
     gemini_decision: str  # "BUY" or "SELL"
     confidence: float
     ticker: str
     reason: str
-    timestamp: float # Internal sort key
+    weight: float = 1.0 # Influencer weight
+    timestamp: float = 0.0 # Internal sort key
     entry_price: Optional[float] = None
     entry_time: Optional[str] = None
 
 @dataclass
 class Trade:
     symbol: str
+    author: str # Added author field
     qty: int
     price: float
     total_cost: float

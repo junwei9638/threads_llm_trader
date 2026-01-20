@@ -8,6 +8,38 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from config import POSTS_FILE, THREADS_USERNAME, THREADS_PASSWORD
+from datetime import datetime, timedelta
+import re
+
+def parse_relative_time(time_str):
+    """
+    Parse relative time strings like '1天', '12小時', '30分鐘', '1d', '2h'.
+    Returns a timedelta object or None if parsing fails.
+    """
+    time_str = time_str.strip()
+    
+    # regex patterns for Chinese and English short forms
+    # 1天, 1d
+    if '天' in time_str or time_str.endswith('d'):
+        num = re.findall(r'\d+', time_str)
+        if num:
+            return timedelta(days=int(num[0]))
+            
+    # 12小時, 12h
+    elif '小時' in time_str or time_str.endswith('h'):
+        num = re.findall(r'\d+', time_str)
+        if num:
+            return timedelta(hours=int(num[0]))
+            
+    # 30分鐘, 30m, 30分
+    elif '分' in time_str or time_str.endswith('m'):
+        num = re.findall(r'\d+', time_str)
+        if num:
+            return timedelta(minutes=int(num[0]))
+            
+    # Just a number might be seconds or minutes, but unlikely in this context without unit.
+    # We could assume minutes if just digits, but safer to return None.
+    return None
 
 def fetch_following_posts():
     posts = []
@@ -99,28 +131,68 @@ def fetch_following_posts():
                 if len(text_content) < 10:
                     continue
                 
-                # Try to extract influencer name
-                # Heuristic: split lines, usually first line is name or "Name\nTime"
-                lines = text_content.split('\n')
-                influencer = lines[0].strip() if lines else "Unknown"
-                
-                # Timestamp
+                # Try to extract influencer name and clean content based on user request.
+                # Heuristic provided: Influencer is the first line of content.
                 now_ts = time.time()
                 fetch_time_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+                
+                # Calculate post_time from relative time if available
+                # calculated_post_time logic
+                # Default to fetch time
+                post_time_str = fetch_time_str
+                
+                lines = text_content.split('\n')
+                content_text = text_content # Default
+                
+                if lines:
+                    influencer = lines[0].strip()
+                    
+                    start_index = 1
+                    time_line_index = -1
+                    
+                    # Search for time in the first few lines (e.g., lines 1 to 4)
+                    # We skip line 0 as it is influencer
+                    for i in range(1, min(len(lines), 5)):
+                        line_text = lines[i].strip()
+                        time_delta = parse_relative_time(line_text)
+                        if time_delta:
+                            # Found the time line
+                            post_dt = datetime.now() - time_delta
+                            post_time_str = post_dt.strftime("%Y-%m-%d %H:%M")
+                            time_line_index = i
+                            break
+                    
+                    # Content cleaning
+                    valid_lines = []
+                    # We start from line 1 (skipping influencer)
+                    # We iterate through all remaining lines
+                    for i, line in enumerate(lines[1:], start=1):
+                        if i == time_line_index:
+                            continue # Skip the time line
+                        
+                        line_str = line.strip()
+                        if line_str in ["翻譯", "Translation"]:
+                            break
+                        if line_str:
+                            valid_lines.append(line_str)
+                    
+                    content_text = "\n".join(valid_lines).strip()
+
+                else:
+                    influencer = "Unknown"
+                    content_text = text_content
                 
                 # Generate stable ID
                 post_id = f"threads_{hashlib.md5(text_content.encode('utf-8')).hexdigest()[:8]}"
 
                 posts.append({
                     "id": post_id,
-                    "content": text_content,
+                    "content": content_text,
                     "timestamp": now_ts,
                     "influencer": influencer,
-                    "post_time": fetch_time_str, # Threads doesn't easily expose absolute time in text, using fetch time as proxy
+                    "post_time": post_time_str,
                     "fetch_time": fetch_time_str
                 })
-                if i < 3:
-                    print(f"Sample post {i}: ID={post_id} | {influencer} | {text_content[:30]}...")
             except Exception as e:
                 print(f"Error parsing post {i}: {e}")
 

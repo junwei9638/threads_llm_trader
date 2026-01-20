@@ -55,7 +55,8 @@ class JsonSignalRepository(SignalRepository):
         data = [
             {
                 "post_id": s.post_id,
-                "influencer": s.influencer,
+                "post_id": s.post_id,
+                "author": s.author,
                 "post_time": s.post_time,
                 "fetch_time": s.fetch_time,
                 "gemini_decision": s.gemini_decision,
@@ -82,7 +83,7 @@ class JsonSignalRepository(SignalRepository):
         return [
             Signal(
                 post_id=item.get("post_id", ""),
-                influencer=item.get("influencer", ""),
+                author=item.get("author", item.get("influencer", "")), # Fallback for old data
                 post_time=item.get("post_time", ""),
                 fetch_time=item.get("fetch_time", ""),
                 gemini_decision=item.get("gemini_decision", ""),
@@ -99,7 +100,7 @@ class JsonSignalRepository(SignalRepository):
 class CsvTradeRepository(TradeRepository):
     def __init__(self, filepath: str):
         self.filepath = filepath
-        self.fieldnames = ["timestamp", "symbol", "qty", "price", "total_cost"]
+        self.fieldnames = ["timestamp", "author", "symbol", "qty", "price", "total_cost"]
 
     def _ensure_file(self):
         if not os.path.exists(self.filepath):
@@ -113,6 +114,7 @@ class CsvTradeRepository(TradeRepository):
             writer = csv.DictWriter(f, fieldnames=self.fieldnames)
             writer.writerow({
                 "timestamp": trade.timestamp.isoformat(),
+                "author": trade.author,
                 "symbol": trade.symbol,
                 "qty": trade.qty,
                 "price": trade.price,
@@ -129,6 +131,7 @@ class CsvTradeRepository(TradeRepository):
             for row in reader:
                 trades.append(Trade(
                     symbol=row["symbol"],
+                    author=row.get("author", "Unknown"), # Handle migration
                     qty=int(row["qty"]),
                     price=float(row["price"]),
                     total_cost=float(row["total_cost"]),

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict
 from .entities import Post, Signal, Trade
+import pandas as pd
 
 class PostRepository(ABC):
     @abstractmethod
@@ -37,4 +38,13 @@ class StockPriceProvider(ABC):
 class MarketAnalyzer(ABC):
     @abstractmethod
     def analyze_posts(self, posts: List[Post]) -> List[Signal]:
+        pass
+
+class InfluencerTracker(ABC):
+    @abstractmethod
+    def update_stats(self) -> None:
+        pass
+
+    @abstractmethod
+    def get_weight(self, author: str) -> float:
         pass

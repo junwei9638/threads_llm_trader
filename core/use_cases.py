@@ -1,6 +1,6 @@
 from typing import List
 from .entities import Signal, Trade, Post
-from .interfaces import PostRepository, SignalRepository, TradeRepository, MarketAnalyzer, StockPriceProvider
+from .interfaces import PostRepository, SignalRepository, TradeRepository, MarketAnalyzer, StockPriceProvider, InfluencerTracker
 from datetime import datetime
 
 class ProcessMarketData:
@@ -11,6 +11,7 @@ class ProcessMarketData:
         trade_repo: TradeRepository,
         analyzer: MarketAnalyzer,
         price_provider: StockPriceProvider,
+        influencer_tracker: InfluencerTracker,
         initial_cash: float
     ):
         self.post_repo = post_repo
@@ -18,9 +19,14 @@ class ProcessMarketData:
         self.trade_repo = trade_repo
         self.analyzer = analyzer
         self.price_provider = price_provider
+        self.influencer_tracker = influencer_tracker
         self.initial_cash = initial_cash
 
     def run(self):
+        # 0. Update Stats from previous trades
+        print("Updating influencer stats...")
+        self.influencer_tracker.update_stats()
+
         # 1. Load posts (In a real scenario, this might trigger a fetch)
         # For now, we assume crawler has run or we trigger it via another service.
         # But per clean arch, we just "load" what's available or use a CrawlerService.
@@ -37,20 +43,23 @@ class ProcessMarketData:
             print("No signals found.")
             return
 
-        # 2.5 Enrich Signals with Entry Info (Mock Execution for Reporting)
-        # The user wants "entry_price" and "entry_time" in the signals.json
-        print("Enriching signals with market data...")
+        # 2.5 Enrich Signals with Entry Info and Weights
+        print("Enriching signals with market data and weights...")
         for s in signals:
+            # Entry Price
             price = self.price_provider.get_current_price(s.ticker)
             if price:
                 s.entry_price = price
                 s.entry_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+            
+            # Application Weight
+            s.weight = self.influencer_tracker.get_weight(s.author)
         
         # 3. Save Signals
         self.signal_repo.save_signals(signals)
         print(f"Saved {len(signals)} signals.")
 
-        # 4. Execute Trades (Simple Logic)
+        # 4. Execute Trades (Weighted Logic)
         self._execute_trades(signals)
 
     def _execute_trades(self, signals: List[Signal]):
@@ -60,19 +69,25 @@ class ProcessMarketData:
             print("No buy signals.")
             return
 
-        # Simple strategy: top 3 by score (count * confidence)
-        # Group by symbol
+        # Implementation of weighted score strategy
+        # signals["weighted_score"] = signals["confidence"] * signals["weight"]
+        # summary = groupby("symbol").agg(score="sum", mentions="count")
+        
         grouped = {}
         for s in buy_signals:
             if s.ticker not in grouped:
-                grouped[s.ticker] = {"count": 0, "conf_sum": 0.0}
+                grouped[s.ticker] = {"count": 0, "weighted_score_sum": 0.0}
+            
+            weighted_score = s.confidence * s.weight
+            
             grouped[s.ticker]["count"] += 1
-            grouped[s.ticker]["conf_sum"] += s.confidence
+            grouped[s.ticker]["weighted_score_sum"] += weighted_score
         
         scored = []
         for sym, data in grouped.items():
-            avg_conf = data["conf_sum"] / data["count"]
-            score = data["count"] * avg_conf
+            # User logic: summary = (signals...).agg(score=("weighted_score", "sum"))
+            # So the score IS the sum of weighted scores.
+            score = data["weighted_score_sum"]
             scored.append((sym, score))
         
         # Sort and take top 3

@@ -14,7 +14,8 @@ from infrastructure.repositories import (
 )
 from infrastructure.services import (
     GeminiMarketAnalyzer,
-    FinMindPriceProvider
+    FinMindPriceProvider,
+    InfluencerManager
 )
 from core.use_cases import ProcessMarketData
 
@@ -41,6 +42,9 @@ def main():
     
     analyzer = GeminiMarketAnalyzer(api_key=GEMINI_API_KEY)
     price_provider = FinMindPriceProvider(token=FINMIND_TOKEN)
+    
+    influencer_stats_file = os.path.join(os.path.dirname(TRADES_FILE), "influencer_stats.csv")
+    influencer_tracker = InfluencerManager(stats_file=influencer_stats_file, trades_file=TRADES_FILE)
 
     # 2. Instantiate Use Case (Application Layer)
     # Inject dependencies
@@ -50,15 +54,18 @@ def main():
         trade_repo=trade_repo,
         analyzer=analyzer,
         price_provider=price_provider,
+        influencer_tracker=influencer_tracker,
         initial_cash=INITIAL_CASH
     )
 
     # 3. Execution
-    try:
-        processor.run()
-        print("Execution completed successfully.")
-    except Exception as e:
-        print(f"Execution failed: {e}")
+    # try:
+    #     processor.run()
+    #     print("Execution completed successfully.")
+    # except Exception as e:
+    #     import traceback
+    #     traceback.print_exc()
+    #     print(f"Execution failed: {e}")
 
 if __name__ == "__main__":
     main()

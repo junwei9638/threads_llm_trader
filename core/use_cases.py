@@ -76,21 +76,24 @@ class ProcessMarketData:
         grouped = {}
         for s in buy_signals:
             if s.ticker not in grouped:
-                grouped[s.ticker] = {"count": 0, "weighted_score_sum": 0.0}
+                grouped[s.ticker] = {"count": 0, "weighted_score_sum": 0.0, "authors": set()}
             
             weighted_score = s.confidence * s.weight
             
             grouped[s.ticker]["count"] += 1
             grouped[s.ticker]["weighted_score_sum"] += weighted_score
+            grouped[s.ticker]["authors"].add(s.author)
         
         scored = []
         for sym, data in grouped.items():
             # User logic: summary = (signals...).agg(score=("weighted_score", "sum"))
             # So the score IS the sum of weighted scores.
             score = data["weighted_score_sum"]
-            scored.append((sym, score))
+            authors = ",".join(list(data.get("authors", [])))
+            scored.append((sym, score, authors))
         
         # Sort and take top 3
+        # item is (sym, score, authors)
         scored.sort(key=lambda x: x[1], reverse=True)
         top3 = scored[:3]
 
@@ -102,7 +105,7 @@ class ProcessMarketData:
         # Calculate budget per stock
         budget = self.initial_cash / len(top3)
 
-        for sym, score in top3:
+        for sym, score, authors in top3:
             price = self.price_provider.get_current_price(sym)
             if not price:
                 print(f"Could not get price for {sym}")
@@ -113,6 +116,7 @@ class ProcessMarketData:
                 total_cost = qty * price
                 trade = Trade(
                     symbol=sym,
+                    author=authors,
                     qty=qty,
                     price=price,
                     total_cost=total_cost,

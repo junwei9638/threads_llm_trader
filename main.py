@@ -4,6 +4,7 @@ from config import (
     SIGNALS_FILE,
     TRADES_FILE,
     GEMINI_API_KEY,
+    GEMINI_API_KEYS,
     FINMIND_TOKEN,
     INITIAL_CASH
 )
@@ -40,7 +41,7 @@ def main():
     signal_repo = JsonSignalRepository(SIGNALS_FILE)
     trade_repo = CsvTradeRepository(TRADES_FILE)
     
-    analyzer = GeminiMarketAnalyzer(api_key=GEMINI_API_KEY)
+    analyzer = GeminiMarketAnalyzer(api_keys=GEMINI_API_KEYS)
     price_provider = FinMindPriceProvider(token=FINMIND_TOKEN)
     
     influencer_stats_file = os.path.join(os.path.dirname(TRADES_FILE), "influencer_stats.csv")
@@ -59,13 +60,13 @@ def main():
     )
 
     # 3. Execution
-    # try:
-    #     processor.run()
-    #     print("Execution completed successfully.")
-    # except Exception as e:
-    #     import traceback
-    #     traceback.print_exc()
-    #     print(f"Execution failed: {e}")
+    try:
+        processor.run()
+        print("Execution completed successfully.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Execution failed: {e}")
 
 if __name__ == "__main__":
     main()
